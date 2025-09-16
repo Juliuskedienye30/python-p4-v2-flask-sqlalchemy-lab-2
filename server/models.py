@@ -1,14 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.ext.associationproxy import association_proxy
 
-# Naming convention for migrations
-metadata = MetaData(naming_convention={
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-})
-
-db = SQLAlchemy(metadata=metadata)
+db = SQLAlchemy()
 
 
 class Customer(db.Model, SerializerMixin):
@@ -17,13 +11,13 @@ class Customer(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
-    # Relationships
+    # Task #1: relationship with Review
     reviews = db.relationship("Review", back_populates="customer")
 
-    # Association proxy (Customer → Items through Reviews)
+    # Task #2: association proxy for items
     items = association_proxy("reviews", "item")
 
-    # Serialization rule: exclude reviews.customer to prevent recursion
+    # Task #3: serialization rules
     serialize_rules = ("-reviews.customer",)
 
     def __repr__(self):
@@ -37,10 +31,10 @@ class Item(db.Model, SerializerMixin):
     name = db.Column(db.String)
     price = db.Column(db.Float)
 
-    # Relationships
+    # Task #1: relationship with Review
     reviews = db.relationship("Review", back_populates="item")
 
-    # Serialization rule: exclude reviews.item to prevent recursion
+    # Task #3: serialization rules
     serialize_rules = ("-reviews.item",)
 
     def __repr__(self):
@@ -53,16 +47,15 @@ class Review(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.String)
 
-    # Foreign keys
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
     item_id = db.Column(db.Integer, db.ForeignKey("items.id"))
 
-    # Relationships
+    # Task #1: relationships
     customer = db.relationship("Customer", back_populates="reviews")
     item = db.relationship("Item", back_populates="reviews")
 
-    # Serialization rules: exclude nested loops
-    serialize_rules = ("-customer.reviews", "-item.reviews")
+    # Task #3: serialization rules
+    serialize_rules = ("-customer.reviews", "-item.reviews",)
 
     def __repr__(self):
         return f"<Review {self.id}, {self.comment}>"
